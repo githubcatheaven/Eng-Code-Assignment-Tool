@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>代码注释去除器</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
+    <style>
+        textarea {
+            resize: none;
+            width: 100%;
+            height: 500px;
+        }
+
+        #toast {
+            visibility: hidden;
+            min-width: 250px;
+            margin-left: -125px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 2px;
+            padding: 16px;
+            position: fixed;
+            z-index: 1;
+            left: 50%;
+            bottom: 30px;
+        }
+
+        #toast.show {
+            visibility: visible;
+            -webkit-animation: fadein 0.5s, fadeout 0.5s 1.5s;
+            animation: fadein 0.5s, fadeout 0.5s 1.5s;
+        }
+
+        @-webkit-keyframes fadein {
+            from {
+                bottom: 0;
+                opacity: 0;
+            }
+
+            to {
+                bottom: 30px;
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadein {
+            from {
+                bottom: 0;
+                opacity: 0;
+            }
+
+            to {
+                bottom: 30px;
+                opacity: 1;
+            }
+        }
+
+        @-webkit-keyframes fadeout {
+            from {
+                bottom: 30px;
+                opacity: 1;
+            }
+
+            to {
+                bottom: 0;
+                opacity: 0;
+            }
+        }
+
+        @keyframes fadeout {
+            from {
+                bottom: 30px;
+                opacity: 1;
+            }
+
+            to {
+                bottom: 0;
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100 flex justify-center items-center min-h-screen">
+    <div class="bg-white p-8 rounded shadow-md w-full max-w-4xl">
+        <h1 class="text-2xl font-bold mb-4">代码注释去除器</h1>
+        <textarea id="codeInput" class="border border-gray-300 p-2 mb-4" placeholder="请输入代码"></textarea>
+        <div class="flex space-x-4">
+            <button id="removeCommentsButton"
+                class="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 focus:outline-none focus:ring focus:ring-blue-300">
+                去除注释&空行
+            </button>
+            <button id="copyToClipboardButton"
+                class="bg-green-500 text-white py-2 px-4 rounded hover:bg-green-600 focus:outline-none focus:ring focus:ring-green-300">
+                复制到剪贴板
+            </button>
+            <button id="translateToEnglishButton"
+                class="bg-yellow-500 text-white py-2 px-4 rounded hover:bg-yellow-600 focus:outline-none focus:ring focus:ring-yellow-300">
+                转为英文
+            </button>
+            <button id="clearButton"
+                class="bg-red-500 text-white py-2 px-4 rounded hover:bg-red-600 focus:outline-none focus:ring focus:ring-red-300">
+                清空
+            </button>
+        </div>
+    </div>
+    <div id="toast">已成功复制到剪贴板！</div>
+
+    <script>
+        const codeInput = document.getElementById('codeInput');
+        const removeCommentsButton = document.getElementById('removeCommentsButton');
+        const copyToClipboardButton = document.getElementById('copyToClipboardButton');
+        const translateToEnglishButton = document.getElementById('translateToEnglishButton');
+        const toast = document.getElementById('toast');
+        const clearButton = document.getElementById('clearButton');
+
+        removeCommentsButton.addEventListener('click', () => {
+            const code = codeInput.value;
+            const codeWithoutComments = removeCommentsAndEmptyLines(code);
+            codeInput.value = codeWithoutComments;
+        });
+
+        copyToClipboardButton.addEventListener('click', () => {
+            const code = codeInput.value;
+            const textarea = document.createElement('textarea');
+            textarea.value = code;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+
+            toast.className = "show";
+            setTimeout(() => {
+                toast.className = toast.className.replace("show", "");
+            }, 2000);
+        });
+
+        translateToEnglishButton.addEventListener('click', async () => {
+            const code = codeInput.value;
+            try {
+                const response = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=zh-CN&tl=en&dt=t&q=${encodeURIComponent(code)}`);
+                const data = await response.json();
+                let translatedText = '';
+                data[0].forEach(item => {
+                    translatedText += item[0];
+                });
+                codeInput.value = translatedText;
+            } catch (error) {
+                console.error('翻译出错:', error);
+                alert('翻译过程中出现错误，请稍后再试。');
+            }
+        });
+
+        clearButton.addEventListener('click', () => {
+            codeInput.value = '';
+            codeInput.focus();
+        });
+
+        function removeCommentsAndEmptyLines(code) {
+            // 移除单行注释（包括 // 和 #）
+            let result = code.replace(/\/\/.*$/gm, '');
+            result = result.replace(/#.*$/gm, '');
+            // 移除多行注释
+            result = result.replace(/\/\*[\s\S]*?\*\//g, '');
+            // 去除多余的空行，保留2个回车换行
+            result = result.replace(/(\r?\n){3,}/g, '\n\n');
+            return result;
+        }
+    </script>
+</body>
+
+</html>    
